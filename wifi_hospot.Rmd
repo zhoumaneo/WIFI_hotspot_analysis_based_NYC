@@ -1,0 +1,163 @@
+---
+title: "WIFI_hotspot_analysis_based_NYC"
+output: html_notebook
+---
+
+```{r}
+# set working path
+getwd()
+setwd('/Users/afen/Documents/GitHub/WIFI_hotspot_analysis_based_NYC')
+```
+
+```{r}
+# load wifi data
+wifi_data <- read.csv('./data/NYC_Free_Public_WiFi_03292017.csv')
+head(wifi_data)
+names(wifi_data)
+```
+
+```{r}
+# subset the data select interesting columns
+wifi_data <- subset(wifi_data,select = c("the_geom","TYPE","PROVIDER","LAT","LOCATION","LON","X","Y","BORONAME"))
+head(wifi_data)
+summary(wifi_data)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+library(scales)
+# plot bar graph to show data distribution
+wifi_pro <- ggplot(wifi_data,aes(PROVIDER))
+wifi_pro + geom_bar(aes(fill=TYPE)) + scale_fill_brewer(direction = -1,palette = "Green") + theme(axis.text.x = element_text(colour="grey20",size = 5,angle=45,hjust=.5,vjust=.5,face="plain"))
+```
+
+```{r}
+# wifi hotspot location in different zones
+wifi_boro <- ggplot(wifi_data,aes(BORONAME))
+wifi_boro + geom_bar(aes(fill=TYPE)) + scale_fill_brewer(palette = "Green",direction = -1)
+```
+
+```{r}
+# use cartodb to do analysis from database
+library(RCurl)
+library(bitops)
+library(RJSONIO)
+library(devtools)
+library(CartoDB)
+```
+
+```{r}
+# connect to our account
+cartodb("zhoumaneo")
+cartodb.test()
+```
+
+```{r}
+cartodb("zhoumaneo", api.key="fb070799acad21d626b5ade94caa3542b7decd88")
+```
+
+```{r}
+# Data Visualization
+library(rgdal)
+# select data from layers based on requirments
+bicycle_routes <- cartodb.collection(sql="SELECT * FROM bicycle_routes",method="GeoJSON")
+bicycle_routes.SP <- readOGR(bicycle_routes,layer = 'OGRGeoJSON',verbose =FALSE)
+Free_wifi_hotspot <- cartodb.collection(sql = "SELECT * FROM nyc_wi_fi_hotspot_locations WHERE type = 'Free'",method = "GeoJSON")
+Free_wifi_hotspot.SP <- readOGR(Free_wifi_hotspot,layer = 'OGRGeoJSON',verbose = FALSE)
+bicycle_parking_shelters <- cartodb.collection(sql="SELECT * FROM bicycle_parking_shelters",method = "GeoJSON")
+bicycle_parking_shelters.SP <- readOGR(bicycle_parking_shelters,layer = 'OGRGeoJSON',verbose = FALSE)
+```
+
+```{r}
+# to show the spatial relation about wifi hotspots, bicycle routes and bicycle parking shelters
+plot(bicycle_routes.SP)
+plot(Free_wifi_hotspot.SP,col = "red",add = TRUE)
+plot(bicycle_parking_shelters.SP,col = "green",add = TRUE, pch = 20)
+```
+
+```{r}
+Limited_free_wifi_hotspot <- cartodb.collection(sql = "SELECT * FROM nyc_wi_fi_hotspot_locations WHERE type = 'Limited Free'",method = "GeoJSON")
+Limited_free_wifi_hotspot.SP <- readOGR(Limited_free_wifi_hotspot,layer = 'OGRGeoJSON',verbose = FALSE)
+```
+
+```{r}
+plot(bicycle_routes.SP)
+plot(Limited_free_wifi_hotspot.SP,col = "red",add = TRUE)
+plot(bicycle_parking_shelters.SP, col = "green",add = TRUE, pch = 20)
+```
+
+```{r}
+bus_stop_shelters <- cartodb.collection(sql = "SELECT * FROM bus_stop_shelters",method = "GeoJSON")
+bus_stop_shelters.SP <- readOGR(bus_stop_shelters,layer = 'OGRGeoJSON',verbose = FALSE)
+```
+
+```{r}
+# to show the spatial relationship about bus stop shelters and wifi hotspots.
+plot(bus_stop_shelters.SP)
+plot(Free_wifi_hotspot.SP,col = "green",add = TRUE)
+plot(Limited_free_wifi_hotspot.SP,col = "dark green",add = TRUE)
+```
+
+```{r}
+subway_routes <- cartodb.collection(sql = "SELECT * FROM subway",method = "GeoJSON")
+subway_routes.SP <- readOGR(subway_routes,layer = 'OGRGeoJSON',verbose = FALSE)
+subway_stations <- cartodb.collection(sql = "SELECT * FROM subway_stations",method = "GeoJSON")
+subway_stations.SP <- readOGR(subway_stations,layer = 'OGRGeoJSON',verbose = FALSE)
+```
+
+
+```{r}
+# to show spatial relationship about subway routes and wifi hotspots
+plot(subway_routes.SP)
+plot(subway_stations.SP,add = TRUE)
+plot(Free_wifi_hotspot.SP,col = "green",add = TRUE)
+plot(Limited_free_wifi_hotspot.SP,col = "dark green",add = TRUE)
+```
+
+```{r}
+# Buffer analysis
+# Buffer wifi hotspot data to 100m range
+wifi_buffers <- cartodb.collection(sql="SELECT cartodb_id,  ST_Buffer(the_geom::geography,100) as the_geom FROM nyc_wi_fi_hotspot_locations",method="GeoJSON")
+
+wifi_buffers.SP <- readOGR(wifi_buffers,layer = 'OGRGeoJSON',verbose =FALSE)
+
+plot(wifi_buffers.SP[1:100,])
+```
+
+```{r}
+subway_routes_buffers <- cartodb.collection(sql="SELECT cartodb_id,  ST_Buffer(the_geom::geography,100) as the_geom FROM subway",method="GeoJSON")
+
+# Plot the results
+subway_routes_buffers.SP <- readOGR(subway_routes_buffers,layer = 'OGRGeoJSON',verbose =FALSE)
+#Plot first 100 tree buffers
+plot(subway_routes_buffers.SP)
+```
+
+```{r}
+wifi_hotspot_without_subway_routes <- cartodb.collection(sql = "SELECT a.* FROM nyc_wi_fi_hotspot_locations AS a,subway AS b WHERE NOT ST_Intersects(a.the_geom,ST_Buffer(b.the_geom::geography,100))",method = "GeoJSON")
+# Plot the results
+wifi_hotspot_without_subway_routes.SP <- readOGR(wifi_hotspot_without_subway_routes,layer = 'OGRGeoJSON',verbose =FALSE)
+```
+
+
+```{r}
+#Plot first 100 tree buffers
+plot(wifi_hotspot_without_subway_routes.SP,col = "red")
+plot(subway_routes.SP,add=TRUE)
+```
+```{r}
+wifi_hotspot_without_subway_routes_table <- cartodb.collection(sql = "SELECT a.* FROM nyc_wi_fi_hotspot_locations AS a,subway AS b WHERE NOT ST_Intersects(a.the_geom,ST_Buffer(b.the_geom::geography,100))")
+```
+
+```{r}
+wifi_hotspot_table <- cartodb.collection(sql = "SELECT * FROM nyc_wi_fi_hotspot_locations")
+```
+
+```{r}
+
+```
+
+
