@@ -1,6 +1,8 @@
 ---
 title: "WIFI hotspot analysis based NYC"
-output: html_notebook
+output:
+  html_notebook: default
+  pdf_document: default
 ---
 ## 1.Introduction
 Wi-Fi networks are now more and more popular among urban residents. Some public places or private places have provided Wi-Fi networks to the public free of charge. Public Wi-Fi brings convenience to people's lives and transportation. On the other hand, people's behavior data recorded by Wi-Fi is an important data source. It can provide data for better urban planning. Of course, there is also a certain commercial value. The construction of public Wi-Fi in the city is an important step in building a smart city. Reasonable site selection can improve the efficiency of resource utilization. 
@@ -48,12 +50,11 @@ wifi_pro + geom_bar(aes(fill=TYPE)) + scale_fill_brewer(direction = -1,palette =
 ```
 
 ```{r}
-# wifi hotspot location in different zones
 wifi_boro <- ggplot(wifi_data,aes(BORONAME))
 wifi_boro + geom_bar(aes(fill=TYPE)) + scale_fill_brewer(palette = "Green",direction = -1)
 ```
 Choropleth and Heat map powered by carto[https://carto.com/]
-![Choropleth and Heat map](/Users/afen/Desktop/New Folder With Items/Choropleth and Heat map.png)
+![Choropleth and Heat map](./image/Choropleth and Heat map.png)
 
 ### b.Spatial Queries and Spatial Analysis
 ```{r}
@@ -140,13 +141,13 @@ plot(wifi_buffers.SP[1:100,])
 ```
 
 * Wifi hotspot locations buffer by carto
-![wifi buffer](/Users/afen/Desktop/New Folder With Items/wifi buffer.png)
+![wifi buffer](./image/wifi buffer.png)
 
 * The signal coverage of various subway lines.
-![subway_routes](/Users/afen/Desktop/New Folder With Items/subway_routes.png)
+![subway_routes](./image/subway_routes.png)
 
 * The signal coverage of various bicycle routes.
-![bicycle routes](/Users/afen/Desktop/New Folder With Items/bicycle routes.png)
+![bicycle routes](./image/bicycle routes.png)
 
 #### 3) Utilization of wifi hotspot
 
@@ -227,3 +228,10 @@ wifi_hotspot_without_subway_routes_table <- cartodb.collection(sql = "SELECT a.*
  * Data Visualization with ggplot2 Cheat Sheet [https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf]
  
  * CartoDB[https://github.com/CartoDB/cartodb]
+ 
+ 
+### Author information
+ * Name: ZHOU Yimin 
+ * Student ID: 18087325g
+ * Resource: [https://github.com/zhoumaneo/WIFI_hotspot_analysis_based_NYC]
+ 
