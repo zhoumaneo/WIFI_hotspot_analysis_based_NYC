@@ -231,7 +231,6 @@ wifi_hotspot_without_subway_routes_table <- cartodb.collection(sql = "SELECT a.*
  
  
 ### Author information
- * Name: ZHOU Yimin 
- * Student ID: 18087325g
+ * Author: zhoumaneo
  * Resource: [https://github.com/zhoumaneo/WIFI_hotspot_analysis_based_NYC]
  
